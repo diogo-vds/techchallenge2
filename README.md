@@ -31,7 +31,7 @@ MongoDB
 Swagger
 
 Clone o repositório:
-git clone https://github.com/diogo-vds/techchallenge2
+git clone https://github.com/diogo-vds/techchallenge2.git
 
 Copiar código
 http://localhost:8080/swagger-ui.html
