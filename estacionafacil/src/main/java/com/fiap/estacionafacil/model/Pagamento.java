@@ -38,4 +38,14 @@ public class Pagamento {
 
     @ApiModelProperty(notes = "Flag de taxa fixa ou não")
     private boolean taxaFixa;
+
+    @ApiModelProperty(notes = "Recibo do pagamento")
+    private String recibo;
+
+    @ApiModelProperty(notes = "Flag de saber se está ativo e filtrar na hora do alerta")
+    private boolean ativo;
+
+    @ApiModelProperty(notes = "Duração em minutos")
+    private long duracaoMinutos;
+
 }

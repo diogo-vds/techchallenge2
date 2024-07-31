@@ -1,7 +1,9 @@
 package com.fiap.estacionafacil.service;
 
+import com.fiap.estacionafacil.model.Motorista;
 import com.fiap.estacionafacil.model.Pagamento;
 import com.fiap.estacionafacil.model.enumeracao.TipoPagamento;
+import com.fiap.estacionafacil.repository.MotoristaRepository;
 import com.fiap.estacionafacil.repository.PagamentoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,13 +19,22 @@ public class PagamentoService {
     @Autowired
     private PagamentoRepository pagamentoRepository;
 
+    @Autowired
+    private MotoristaRepository motoristaRepository;
+
     public Pagamento criarPagamento(String motoristaId, String veiculoId, TipoPagamento pagamentoMethod, LocalDateTime startTime, boolean taxaFixa) {
+        Motorista motorista = motoristaRepository.findById(motoristaId).orElseThrow(() -> new RuntimeException("Motorista não encontrado"));
+        if (pagamentoMethod == TipoPagamento.PIX) {
+            throw new IllegalArgumentException("PIX só disponível para períodos fixos!");
+        }
+
         Pagamento pagamento = new Pagamento();
         pagamento.setMotoristaId(motoristaId);
         pagamento.setVeiculoId(veiculoId);
         pagamento.setMetodoPagamento(pagamentoMethod);
         pagamento.setDataInicio(startTime);
         pagamento.setTaxaFixa(taxaFixa);
+        pagamento.setAtivo(true);
 
         if (taxaFixa) {
             pagamento.setQuantia(calcularTaxaFixa());
@@ -36,13 +47,31 @@ public class PagamentoService {
 
     public Pagamento completarPagamento(String pagamentoId, LocalDateTime dataFim) {
         Pagamento pagamento = pagamentoRepository.findById(pagamentoId).orElseThrow(() -> new RuntimeException("Pagamento não encontrado"));
-        pagamento.setDataInicio(dataFim);
+        pagamento.setDataFim(dataFim);
+        pagamento.setAtivo(false);
+        pagamento.setDuracaoMinutos(calcularDuracao(pagamento));
+        pagamento.setRecibo(gerarRecibo(pagamento));
 
         if (!pagamento.isTaxaFixa()) {
             pagamento.setQuantia(calcularTaxaVariavel(pagamento.getDataInicio(), pagamento.getDataFim()));
         }
 
         return pagamentoRepository.save(pagamento);
+    }
+
+    private long calcularDuracao(Pagamento pagamento) {
+        return Duration.between(pagamento.getDataInicio(), pagamento.getDataFim()).toMinutes();
+    }
+
+    private String gerarRecibo(Pagamento pagamento) {
+        StringBuilder receipt = new StringBuilder();
+        receipt.append("Motorista ID: ").append(pagamento.getMotoristaId()).append("\n");
+        receipt.append("Inicio: ").append(pagamento.getDataInicio()).append("\n");
+        receipt.append("Fim: ").append(pagamento.getDataFim()).append("\n");
+        receipt.append("Duração: ").append(pagamento.getDuracaoMinutos()).append(" minutes\n");
+        receipt.append("Método Pagamento: ").append(pagamento.getMetodoPagamento()).append("\n");
+        receipt.append("Total: ").append(pagamento.getQuantia()).append("\n");
+        return receipt.toString();
     }
 
     private BigDecimal calcularTaxaFixa() {

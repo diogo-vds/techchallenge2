@@ -7,4 +7,5 @@ import java.util.List;
 public interface PagamentoRepository extends MongoRepository<Pagamento, String> {
     List<Pagamento> findByMotoristaId(String motoristaId);
     List<Pagamento> findByVeiculoId(String veiculoId);
+    List<Pagamento> findByAtivoTrue();
 }
